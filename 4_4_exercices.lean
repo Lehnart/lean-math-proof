@@ -137,9 +137,81 @@ example : (∃ x, p x ∧ r) ↔ (∃ x, p x) ∧ r :=
         )
     )
 
-example : (∃ x, p x ∨ q x) ↔ (∃ x, p x) ∨ (∃ x, q x) := sorry
+example : (∃ x, p x ∨ q x) ↔ (∃ x, p x) ∨ (∃ x, q x) := 
+  iff.intro
+    (fun h : (∃ x, p x ∨ q x),
+      exists.elim
+        h
+        (fun w,
+          (fun hw : (p w ∨ q w),
+            or.elim
+              hw
+              (fun hpw : (p w),
+                have hepx : (∃ x, p x) := exists.intro w hpw,
+                or.intro_left (∃ x, q x) hepx 
+              )
+              (fun hqw : (q w),
+                have heqx : (∃ x, q x) := exists.intro w hqw,
+                or.intro_right (∃ x, p x) heqx 
+              )
+          ) 
+        )
+    )
+    (fun h : (∃ x, p x) ∨ (∃ x, q x),
+      or.elim
+        h 
+        (fun hpx : (∃ x, p x),
+          exists.elim 
+            hpx 
+            (fun w,
+              (fun hw : p w,
+                have h_pw_or_qw : (p w) ∨ (q w) := or.intro_left (q w) hw,
+                exists.intro 
+                  w
+                  h_pw_or_qw
+              )
+            )
+        )    
+        (fun hqx : (∃ x, q x),
+          exists.elim 
+            hqx 
+            (fun w,
+              (fun hw : q w,
+                have h_pw_or_qw : (p w) ∨ (q w) := or.intro_right (p w) hw,
+                exists.intro 
+                  w
+                  h_pw_or_qw
+              )
+            )
+        )    
+    )
 
-example : (∀ x, p x) ↔ ¬ (∃ x, ¬ p x) := sorry
+
+example : (∀ x, p x) ↔ ¬ (∃ x, ¬ p x) := 
+  iff.intro
+    (fun h : (∀ x, p x),
+      ( fun hx : (∃ x, ¬ p x),
+        exists.elim
+          hx
+          (fun w,
+            have hpw : p w := h w,
+            (fun hw :  ¬ (p w),
+              absurd hpw hw
+            )
+          )
+      )
+    )
+    (fun h : ¬ (∃ x, ¬ p x),
+      (fun z : α,
+        by_contradiction
+          (fun hnpz : ¬ p z,
+            absurd 
+              (exists.intro z hnpz)
+              h
+          )
+      )
+    )
+
 example : (∃ x, p x) ↔ ¬ (∀ x, ¬ p x) := sorry
 example : (¬ ∃ x, p x) ↔ (∀ x, ¬ p x) := sorry
 example : (¬ ∀ x, p x) ↔ (∃ x, ¬ p x) := sorry
