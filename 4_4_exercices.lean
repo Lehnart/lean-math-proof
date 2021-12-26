@@ -187,7 +187,7 @@ example : (∃ x, p x ∨ q x) ↔ (∃ x, p x) ∨ (∃ x, q x) :=
     )
 
 
-example : (∀ x, p x) ↔ ¬ (∃ x, ¬ p x) := 
+theorem forall_px_eq_not_exist_not_px  {α : Type} {p : α → Prop} : (∀ x, p x) ↔ ¬ (∃ x, ¬ p x) := 
   iff.intro
     (fun h : (∀ x, p x),
       ( fun hx : (∃ x, ¬ p x),
@@ -212,10 +212,185 @@ example : (∀ x, p x) ↔ ¬ (∃ x, ¬ p x) :=
       )
     )
 
-example : (∃ x, p x) ↔ ¬ (∀ x, ¬ p x) := sorry
-example : (¬ ∃ x, p x) ↔ (∀ x, ¬ p x) := sorry
-example : (¬ ∀ x, p x) ↔ (∃ x, ¬ p x) := sorry
+theorem not_exists_p_x_imp_forall_not_p_x {α : Type} {p : α → Prop} :  ¬ (∃ x, p x) -> (∀ x, ¬ p x) := 
+  (fun h : ¬ (∃ x, p x),
+    (fun z,
+      (fun hpz : p z,
+        have h3 :  (∃ x, p x) := 
+          exists.intro 
+            z
+            hpz,
+        h h3 
+      )
+    )
+  )
 
-example : (∀ x, p x → r) ↔ (∃ x, p x) → r := sorry
-example (a : α) : (∃ x, p x → r) ↔ (∀ x, p x) → r := sorry
-example (a : α) : (∃ x, r → p x) ↔ (r → ∃ x, p x) := sorry
+theorem dne {p : Prop} (h : ¬¬p) : p :=
+  by_cases
+    (fun h1 : p , h1)
+    (fun h1 : ¬p , absurd h1 h)
+
+example : (∃ x, p x) ↔ ¬ (∀ x, ¬ p x) := 
+  iff.intro
+  (fun h: (∃ x, p x) ,
+      by_contradiction
+        (fun h2 : ¬¬ (∀ x, ¬ p x),
+          have h1 : (∀ x, ¬ p x) := dne h2,
+          exists.elim
+            h
+            (fun w,
+              (fun hw : (p w),
+                absurd hw (h1 w)
+              )
+            )
+        )
+  )
+  (fun h : ¬ (∀ x, ¬ p x),
+    by_contradiction
+      (fun h1:  ¬ (∃ x, p x),
+        have h2 : (∀ x, ¬ p x) := not_exists_p_x_imp_forall_not_p_x h1, 
+        absurd h2 h
+      )
+  )
+
+example : (¬ ∃ x, p x) ↔ (∀ x, ¬ p x) :=
+  iff.intro
+    (fun h : ¬ ∃ x, p x,
+        not_exists_p_x_imp_forall_not_p_x h
+    )
+    (fun h : ∀ x, ¬ p x,
+        (fun h2 : ∃ x, p x,
+          exists.elim
+            h2
+            (fun w,
+              (fun hw: p w,
+                absurd hw (h w)
+              )
+            )
+        )
+    )
+
+theorem not_forall_iff_not_exists {α : Type} {p : α → Prop} : (¬ ∀ x, p x) ↔ (∃ x, ¬ p x) :=
+  iff.intro
+    (fun h : ¬ ∀ x, p x,
+      by_contradiction
+        (fun h_tofalsify : ¬ (∃ x, ¬ p x),
+          have h2 : ∀ x, p x := (iff.elim_right forall_px_eq_not_exist_not_px) h_tofalsify,
+          absurd h2 h
+        )
+      )
+    (fun h : ∃ x, ¬ p x,
+        exists.elim
+          h 
+          (fun w ,
+            (fun hnw :  ¬ p w,
+              (fun  hallp : ∀ x, p x,
+                absurd (hallp w) hnw
+              )
+            )
+          )
+    )
+
+
+example : (∀ x, p x → r) ↔ (∃ x, p x) → r :=
+  iff.intro
+    (fun h : (∀ x, p x → r),
+      (fun h2 : ∃ x, p x,
+        exists.elim 
+          h2 
+          (fun w,
+            (fun hw: p w,
+              (h w) hw
+            )
+          )
+      )
+    )
+    (fun h : (∃ x, p x) → r,
+      (fun z : α,
+        (fun hpz : p z,
+          h(
+            exists.intro 
+            z 
+            hpz 
+          )
+        )
+      )
+    )
+
+example : (∃ x, p x → r) ↔ (∀ x, p x) → r :=
+  iff.intro
+    (fun h : ∃ x, p x → r,
+        exists.elim
+          h 
+          (fun w ,
+            (fun hw : p w → r,
+              (fun h2 : ∀ x, p x,
+                hw (h2 w)
+              ) 
+            )
+          )
+    )
+    (fun h : (∀ x, p x) → r,
+      by_cases
+        (fun h1 : (∀ x, p x),
+          have hr : r := h h1,
+          exists.intro
+            a
+            (fun hp : p a,
+              hr
+            )
+        )
+        (fun hn1 : ¬ (∀ x, p x),
+          have h3 : (∃ x, ¬ p x) := (iff.elim_left not_forall_iff_not_exists) hn1,
+          exists.elim 
+            h3 
+            (fun w ,
+              (fun hw : ¬ p w,
+                exists.intro
+                  w 
+                  (fun hpw : p w,
+                    absurd hpw hw
+                  )
+              )
+            )
+        )
+    )
+
+
+example : (∃ x, r → p x) ↔ (r → ∃ x, p x) :=
+  iff.intro
+    (fun h : (∃ x, r → p x),
+        exists.elim
+          h 
+          (fun w,
+            (fun hw : r -> p w ,
+              (fun hr : r,
+                exists.intro
+                  w
+                  (hw hr)
+              )
+            )
+          )
+    )
+    (fun h : (r → ∃ x, p x),
+      by_cases
+        (fun hr : r,
+          have h2 : ∃ x, p x := h hr,
+          exists.elim 
+            h2
+            (fun w,
+              (fun hw : p w,
+                exists.intro
+                  w
+                  (fun hr : r, hw)
+              )
+            )
+        )
+        (fun hnr : ¬ r,
+          exists.intro
+            a
+            (fun hr : r,
+              absurd hr hnr
+            )
+        )
+    )        
