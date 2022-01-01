@@ -267,7 +267,7 @@ example : p ∧ false ↔ false :=
   (show p ∧ false -> false ,from
     (fun hp_and_false : p /\ false , and.right hp_and_false )
   )
-  (show false -> p ∧ false ,from false.elim )
+  (show false -> p ∧ false , from false.elim )
 
 open classical
 
