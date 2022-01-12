@@ -20,6 +20,12 @@ theorem set_ext_rec (E F : set α) ( x : α ) :  E = F → (∀x, ( E x ↔ F x 
     )
   )
 
+/- Axiome de sépartion : l'ensemble des éléments d'un ensemble vérifiant une propriété existe -/
+def sep (p : α → Prop) (s : set α) : set α :=
+  (fun a : α,
+    and.intro (s a) (p a)
+  )
+
 /- On peut toujours construire un ensemble vide -/
 def empty_set : (set α) :=
   (fun (a:α), false)
@@ -58,7 +64,6 @@ example (E F : set α) : subset E F <-> ∀ ⦃a⦄, a ∈ E → a ∈ F :=
     (fun h : subset E F, h)
     (fun h : ∀ ⦃a⦄, a ∈ E → a ∈ F, h)
 
-
 /- Une condition suffisante pour qu'un singleton soit un sous ensemble de E est que l'élément appartienne à E -/
 example (a : α) (E : set α) : E a -> (subset (singl a) E) :=
 (fun h : E a,
@@ -69,4 +74,36 @@ example (a : α) (E : set α) : E a -> (subset (singl a) E) :=
   )
 )
 
+/- Une condition suffisante pour qu'un singleton soit un sous ensemble d'un singleton est que les 2 éléments soient égaux -/
+example (a b : α) : a = b -> (subset (singl a) (singl b)) :=
+(fun h : a = b,
+  (fun x : α,
+    (fun h_a_x : a = x ,
+      eq.symm (eq.rec h h_a_x)
+    ) 
+  )
+)
 
+/- Définition de l'ensemble des sous ensembles -/
+def powerset (s : set α) : set (set α) :=
+  (fun t : set α, 
+    subset t s
+  )
+
+/- Définition de l'union entre sous ensembles -/
+def union (s₁ s₂ : set α) : set α :=
+  (fun a : α,
+    or.intro_left (s1 a) (s₂ a)
+  )
+
+/- Définition de l'intersection entre sous ensembles -/
+def inter (s₁ s₂ : set α) : set α :=
+  (fun a : α,
+    and.intro (s1 a) (s₂ a)
+  )
+
+/- Définition de la différence entre sous ensembles -/
+def diff (s t : set α) : set α :=
+(fun a : α,
+  and.intro (s1 a) (¬ (s₂ a) )
+)
