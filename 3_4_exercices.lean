@@ -16,22 +16,19 @@ example : p ∧ q ↔ q ∧ p :=
       show p /\ q ,from and.intro hp hq
     )
 
-variable (p_or_q : p ∨ q)
-variable (q_or_p : q ∨ p)
-
 example : p ∨ q ↔ q ∨ p := 
   iff.intro 
     (show p ∨ q -> q ∨ p ,from 
       fun h1 : p ∨ q ,
         or.elim
-          p_or_q
+          h1
           (fun hp : p ,show q ∨ p ,from or.intro_right q hp)
           (fun hq : q ,show q ∨ p ,from or.intro_left p hq)
     )
     (show q ∨ p -> p ∨ q ,from 
       fun h2 : q ∨ p ,
         or.elim 
-          q_or_p
+          h2
           (fun hq : q ,show p ∨ q ,from or.intro_right p hq)
           (fun hp : p ,show p ∨ q ,from or.intro_left q hp)
     )
@@ -67,7 +64,7 @@ example : (p ∨ q) ∨ r ↔ p ∨ (q ∨ r) :=
           p_or_q_or_r
           (fun h : (p ∨ q) , 
             or.elim
-              p_or_q
+              h
               (fun hp : p , or.intro_left (q ∨ r) hp)
               (fun hq : q , or.intro_right p (or.intro_left r hq))
           )
@@ -80,7 +77,7 @@ example : (p ∨ q) ∨ r ↔ p ∨ (q ∨ r) :=
           (fun hp : p , or.intro_left r (or.intro_left q hp) )
           (fun h : (q ∨ r) , 
             or.elim
-              q_or_r
+              h
               (fun hq : q , or.intro_left r (or.intro_right p hq))
               (fun hr : r , or.intro_right (p ∨ q) hr)
           )

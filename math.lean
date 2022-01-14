@@ -1,10 +1,8 @@
 universe u 
-
-
 variable α : Type u
 
 /- axiome d'extensionnalité -/
-axiom set_ext (E F : set α) ( x : α ) : (∀x, ( E x ↔ F x )) → E = F
+axiom set_ext {α} (E F : set α) : (∀x:α, ( E x ↔ F x )) → E = F
 
 /- La réciproque découle de la définition de l'égalité -/
 theorem set_ext_rec (E F : set α) ( x : α ) :  E = F → (∀x, ( E x ↔ F x )) :=
@@ -23,11 +21,11 @@ theorem set_ext_rec (E F : set α) ( x : α ) :  E = F → (∀x, ( E x ↔ F x 
 /- Axiome de sépartion : l'ensemble des éléments d'un ensemble vérifiant une propriété existe -/
 def sep (p : α → Prop) (s : set α) : set α :=
   (fun a : α,
-    and.intro (s a) (p a)
+    (s a) ∧ (p a)
   )
 
 /- On peut toujours construire un ensemble vide -/
-def empty_set : (set α) :=
+def empty_set {α} : (set α) :=
   (fun (a:α), false)
 
 /- On peut toujours construire un singleton à partir d'une variable -/
@@ -49,7 +47,7 @@ example (a x : α): singl a x -> a = x :=
 
 /- On peut toujours construire un ensemble à partir d'une liste -/
 def list_set {α}: (list α -> set α)
-| list.nil        := empty_set α 
+| list.nil        := empty_set 
 | (list.cons a l) := (fun x:α, (a=x) ∨ (list_set l x) )
 
 /- 
@@ -90,20 +88,158 @@ def powerset (s : set α) : set (set α) :=
     subset t s
   )
 
-/- Définition de l'union entre sous ensembles -/
-def union (s₁ s₂ : set α) : set α :=
-  (fun a : α,
-    or.intro_left (s1 a) (s₂ a)
+/- Définition de l'U entre sous ensembles -/
+def U {α} (s1 s2 : set α) : set α :=
+  (fun a: α,
+    s1 a ∨ s2 a
   )
 
+theorem U_assoc (a b c : set α) : (U a (U b c)) = (U (U a b) c):= 
+  set_ext  
+    (U a (U b c))
+    (U (U a b) c)
+    (fun x : α,
+      iff.intro 
+        (fun h: (U a (U b c)) x,
+           have h2 : a x ∨ b x ∨ c x := h,
+           or.assoc.mpr h2 
+        )
+        (fun h: (U (U a b) c) x,
+           have h2 : (a x ∨ b x) ∨ c x := h,
+           or.assoc.mp h2 
+        )
+    )
+
+theorem U_com (a b : set α) : U a b = U b a:= 
+  set_ext  
+    (U a b)
+    (U b a)
+    (fun x : α,
+      iff.intro 
+        (fun h: U a b x,
+           have h2 : a x ∨ b x := h,
+           or.comm.mp h2 
+        )
+        (fun h: U b a x,
+           have h2 : b x ∨ a x := h,
+           or.comm.mp h2 
+        )
+    )
+
+
+theorem U_id (a b : set α) : (U a a) = a:= 
+  set_ext  
+    (U a a)
+    (a)
+    (fun x : α,
+      iff.intro 
+        (fun h: U a a x,
+          have h2 : a x ∨ a x := h,
+          or.elim
+            h2
+            id
+            id
+        )
+        (fun h: a x,
+           have h2 : a x := h,
+           or.intro_left (a x) h2 
+        )
+    )
+
+
+theorem U_empty (a b : set α) : (U a empty_set) = a:= 
+  set_ext  
+    (U a empty_set)
+    (a)
+    (fun x : α,
+      iff.intro 
+        (fun h: U a empty_set x,
+          have h2 : a x ∨ false := h,
+          or.elim
+            h2
+            id
+            false.elim 
+        )
+        (fun h: a x,
+           have h2 : a x := h,
+           or.intro_left (false) h2 
+        )
+    )
+
 /- Définition de l'intersection entre sous ensembles -/
-def inter (s₁ s₂ : set α) : set α :=
+def I {α} (s1 s2 : set α) : set α :=
   (fun a : α,
-    and.intro (s1 a) (s₂ a)
+    (s1 a) ∧ (s2 a)
   )
+
+theorem I_assoc (a b c : set α) : (I a (I b c)) = (I (I a b) c):= 
+  set_ext  
+    (I a (I b c))
+    (I (I a b) c)
+    (fun x : α,
+      iff.intro 
+        (fun h: (I a (I b c)) x,
+          have h2 : a x ∧ b x ∧ c x := h,
+          and.assoc.mpr h2 
+        )
+        (fun h: (I (I a b) c) x,
+          have h2 : (a x ∧ b x) ∧ c x := h,
+          and.assoc.mp h2 
+        )
+    )
+
+theorem I_com (a b : set α) : I a b = I b a:= 
+  set_ext  
+    (I a b)
+    (I b a)
+    (fun x : α,
+      iff.intro 
+        (fun h: I a b x,
+           have h2 : a x ∧ b x := h,
+           and.comm.mp h2 
+        )
+        (fun h: I b a x,
+           have h2 : b x ∧ a x := h,
+           and.comm.mp h2 
+        )
+    )
+
+
+theorem I_id (a b : set α) : (I a a) = a:= 
+  set_ext  
+    (I a a)
+    (a)
+    (fun x : α,
+      iff.intro 
+        (fun h: I a a x,
+          have h2 : a x ∧ a x := h,
+          and.left h2
+        )
+        (fun h: a x,
+           have h2 : a x := h,
+           and.intro h2 h2 
+        )
+    )
+
+
+theorem I_empty (a b : set α) : (I a empty_set) = empty_set:= 
+  set_ext  
+    (I a empty_set)
+    (empty_set)
+    (fun x : α,
+      iff.intro 
+        (fun h: I a empty_set x,
+          have h2 : a x ∧ false := h,
+          and.right h2 
+        )
+        false.elim 
+    )
 
 /- Définition de la différence entre sous ensembles -/
 def diff (s t : set α) : set α :=
-(fun a : α,
-  and.intro (s1 a) (¬ (s₂ a) )
-)
+  (fun a : α,
+    (s a) ∧ (¬ (t a) )
+  )
+
+
+
