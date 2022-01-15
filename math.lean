@@ -1,11 +1,68 @@
 universe u 
 variable α : Type u
 
+-- distributivity
+theorem dist_and_over_or {p q r : Prop} : p ∧ (q ∨ r) ↔ (p ∧ q) ∨ (p ∧ r) := 
+  iff.intro
+    (show p ∧ (q ∨ r) -> (p ∧ q) ∨ (p ∧ r) ,from
+      (fun h : p ∧ (q ∨ r) , 
+        have hp : p := and.left h,
+        have hq_or_r : (q ∨ r) := and.right h,
+        or.elim
+          hq_or_r
+          (fun hq : q , or.intro_left  (p /\ r) ( and.intro hp hq ) )
+          (fun hr : r , or.intro_right (p /\ q) ( and.intro hp hr ) )
+      )
+    )
+    (show (p ∧ q) ∨ (p ∧ r) -> p ∧ (q ∨ r) ,from
+      (fun h : (p ∧ q) ∨ (p ∧ r) , 
+        have hp : p := 
+          or.elim
+            h
+            (fun h1 : (p ∧ q) , and.left h1)
+            (fun h1 : (p ∧ r) , and.left h1),  
+        have hq_or_r : q ∨ r := 
+          or.elim 
+            h 
+            (fun h1: (p ∧ q) , or.intro_left r (and.right h1) )
+            (fun h1: (p ∧ r) , or.intro_right q (and.right h1) ),
+        and.intro hp hq_or_r
+      )
+    )
+
+theorem dist_or_over_and {p q r : Prop} :   p ∨ (q ∧ r) ↔ (p ∨ q) ∧ (p ∨ r) := 
+  iff.intro 
+  (show  p ∨ (q ∧ r) -> (p ∨ q) ∧ (p ∨ r) ,from 
+    (fun h: p ∨ (q ∧ r) , 
+      or.elim
+        h 
+        (fun hp : p , and.intro (or.intro_left q hp) (or.intro_left r hp) )
+        (fun hq_and_r : q /\ r , and.intro (or.intro_right p (and.left hq_and_r) ) (or.intro_right p (and.right hq_and_r) ))
+    )
+  )
+  (show  (p ∨ q) ∧ (p ∨ r) -> p ∨ (q ∧ r) ,from 
+    (fun h : (p ∨ q) ∧ (p ∨ r) ,
+      have hp_or_q : p ∨ q := h.left,
+      have hp_or_r : p ∨ r := h.right,
+      or.elim 
+        hp_or_q
+        (fun hp: p , or.intro_left (q /\ r) hp)
+        (fun hq: q , 
+          or.elim
+            hp_or_r
+            (fun hp: p , or.intro_left (q /\ r) hp)
+            (fun hr: r , or.intro_right p (and.intro hq hr))
+        )
+    )
+  )
+
+
+
 /- axiome d'extensionnalité -/
 axiom set_ext {α} (E F : set α) : (∀x:α, ( E x ↔ F x )) → E = F
 
 /- La réciproque découle de la définition de l'égalité -/
-theorem set_ext_rec (E F : set α) ( x : α ) :  E = F → (∀x, ( E x ↔ F x )) :=
+theorem set_ext_rec {α} (E F : set α) :  E = F → (∀x, ( E x ↔ F x )) :=
   (fun eq_E_F : (E = F) ,
     (fun x: α,
       iff.intro
@@ -233,6 +290,108 @@ theorem I_empty (a b : set α) : (I a empty_set) = empty_set:=
           and.right h2 
         )
         false.elim 
+    )
+
+theorem I_dist_over_U (a b c : set α) : (I a (U b c)) = (U (I a b) (I a c)):= 
+  set_ext  
+    (I a (U b c))
+    (U (I a b) (I a c))
+    (fun x : α,
+      iff.intro 
+        (fun h: (I a (U b c)) x,
+          have h2 : a x ∧ (b x ∨ c x) := h,
+          dist_and_over_or.mp h2
+        )
+        (fun h: (U (I a b) (I a c)) x,
+          have h2 : a x ∧ b x ∨ a x ∧ c x := h,
+          dist_and_over_or.mpr h2 
+        )
+    )
+
+theorem U_dist_over_I (a b c : set α) : (U a (I b c)) = (I (U a b) (U a c)):= 
+  set_ext  
+    (U a (I b c))
+    (I (U a b) (U a c))
+    (fun x : α,
+      iff.intro 
+        (fun h: (U a (I b c)) x,
+          have h2 : a x ∨ (b x ∧ c x) := h,
+          dist_or_over_and.mp h2
+        )
+        (fun h: (I (U a b) (U a c)) x,
+          have h2 : (a x ∨ b x) ∧ (a x ∨ c x) := h,
+          dist_or_over_and.mpr h2 
+        )
+    )
+
+example (a b : set α) : (subset a b) ↔ (I a b) = a :=
+  iff.intro
+    (fun h : subset a b,
+      set_ext
+        (I a b)
+        a
+        (fun x : α,
+          iff.intro 
+            (fun h_Iab : I a b x, 
+              have h : a x ∧ b x := h_Iab,
+              and.left h 
+            )
+            (fun h_a : a x, 
+              have h_b : b x := h h_a,
+              and.intro h_a h_b 
+            )
+        )
+    )
+    (fun h : (I a b) = a,
+      (fun x : α,
+        (fun ha : a x,
+          have h_Iab_eq_a : (∀x, ( (I a b) x ↔ a x )) :=
+            set_ext_rec
+              (I a b)
+              a 
+              h
+            ,
+          have h_Iab_eq_a_x : (I a b) x ↔ a x := h_Iab_eq_a x,
+          have h_Iab : a x ∧ b x := h_Iab_eq_a_x.mpr ha,
+          and.right h_Iab
+        )
+      )
+    )
+
+example (a b : set α) : (subset a b) ↔ (U a b) = b :=
+  iff.intro
+    (fun h : subset a b,
+      set_ext
+        (U a b)
+        b
+        (fun x : α,
+          iff.intro 
+            (fun h_Uab : U a b x, 
+              have h1 : a x ∨ b x := h_Uab,
+              or.elim
+                h1
+                (fun ha: a x, h ha)
+                id
+            )
+            (fun h_b : b x, 
+              or.intro_right (a x) h_b  
+            )
+        )
+    )
+    (fun h : (U a b) = b,
+      (fun x : α,
+        (fun ha : a x,
+          have h_Uab_eq_b : (∀x, ( (U a b) x ↔ b x )) :=
+            set_ext_rec
+              (U a b)
+              b 
+              h
+            ,
+          have h_Uab_eq_b_x : (U a b) x ↔ b x := h_Uab_eq_b x,
+          have h_Uab : a x ∨ b x := or.intro_left (b x) ha,
+          h_Uab_eq_b_x.mp h_Uab
+        )
+      )
     )
 
 /- Définition de la différence entre sous ensembles -/
