@@ -394,6 +394,34 @@ example (a b : set α) : (subset a b) ↔ (U a b) = b :=
       )
     )
 
+example (a b : set α) : a = b -> (U a b) = (I a b) :=
+  (fun h : a = b ,
+    set_ext 
+      (U a b)
+      (I a b)
+      (fun x : α,
+        iff.intro
+          (fun h_uab : (U a b) x,
+            have h2 : a x ∨ b x := h_uab,
+            or.elim
+              h2 
+              (fun h_ax : a x, 
+                have h_bx : b x := eq.rec h_ax h,
+                and.intro h_ax h_bx 
+              )
+              (fun h_bx : b x, 
+                have h_ax : a x := eq.rec h_bx (eq.symm h),
+                and.intro h_ax h_bx 
+              )
+          )
+          (fun h_iab : (I a b) x,
+            have h2 : a x ∧ b x := h_iab,
+            or.intro_left (b x) (and.left h2) 
+          )
+      )
+  )
+
+
 /- Définition de la différence entre sous ensembles -/
 def diff (s t : set α) : set α :=
   (fun a : α,
