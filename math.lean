@@ -435,11 +435,6 @@ def C {α} (s1 s2 : set α) : set α :=
     (¬ (s1 a)) ∧ s2 a
   )
 
-variables (a b :set α)
-variable x : α 
-#reduce (C (C a b) b) x
-#reduce ¬ (a x) ∧ ¬ b x ∧ b x
-
 theorem dne {p : Prop}  : ¬¬p <-> p :=
   iff.intro 
     (fun hnnp : ¬¬ p,
