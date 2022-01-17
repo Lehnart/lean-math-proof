@@ -75,7 +75,7 @@ theorem set_ext_rec {α} (E F : set α) :  E = F → (∀x, ( E x ↔ F x )) :=
     )
   )
 
-/- Axiome de sépartion : l'ensemble des éléments d'un ensemble vérifiant une propriété existe -/
+/- Axiome de séparation : l'ensemble des éléments d'un ensemble vérifiant une propriété existe -/
 def sep (p : α → Prop) (s : set α) : set α :=
   (fun a : α,
     (s a) ∧ (p a)
@@ -138,12 +138,6 @@ example (a b : α) : a = b -> (subset (singl a) (singl b)) :=
     ) 
   )
 )
-
-/- Définition de l'ensemble des sous ensembles -/
-def powerset (s : set α) : set (set α) :=
-  (fun t : set α, 
-    subset t s
-  )
 
 /- Définition de l'U entre sous ensembles -/
 def U {α} (s1 s2 : set α) : set α :=
@@ -421,7 +415,6 @@ example (a b : set α) : a = b -> (U a b) = (I a b) :=
       )
   )
 
-
 /- Définition de la différence entre sous ensembles -/
 def diff (s t : set α) : set α :=
   (fun a : α,
@@ -429,4 +422,64 @@ def diff (s t : set α) : set α :=
   )
 
 
+/- Définition de l'ensemble des sous ensembles -/
+def powerset (s : set α) : set (set α) :=
+  (fun t : set α, 
+    subset t s
+  )
 
+
+/- Définition du complémentaire -/
+def C {α} (s1 s2 : set α) : set α :=
+  (fun a: α,
+    (¬ (s1 a)) ∧ s2 a
+  )
+
+variables (a b :set α)
+variable x : α 
+#reduce (C (C a b) b) x
+#reduce ¬ (a x) ∧ ¬ b x ∧ b x
+
+theorem dne {p : Prop}  : ¬¬p <-> p :=
+  iff.intro 
+    (fun hnnp : ¬¬ p,
+      classical.by_contradiction
+        (fun h1 : ¬p , absurd h1 hnnp)
+    )
+    (fun hp : p ,
+      (fun h1 : ¬p , absurd hp h1)
+    )
+
+theorem dne_intro {p : Prop} (q : Prop) : ¬ p -> ¬ (p ∧ q):=
+  (fun hnp : ¬ p ,
+    classical.by_contradiction
+      (fun h_nn_p_and_q : ¬¬ (p ∧ q),
+      have hp_and_q : p ∧ q := dne.mp h_nn_p_and_q,
+        (hnp (and.left hp_and_q))
+      )
+  )
+
+example (a b : set α) : subset a b -> C (C a b) b = a :=
+  (fun h_sab : subset a b,
+    set_ext
+      (C (C a b) b)
+      a 
+      (fun x : α, 
+        iff.intro
+          (fun h_CCa : C (C a b) b x,
+            have h_CCa_x : ((a x → false) ∧ b x → false) ∧ b x := h_CCa,
+            have h1 : (a x → false) ∧ b x → false := and.left h_CCa,
+            show a x, from
+              classical.by_contradiction 
+                (fun hna : ¬ (a x) ,
+                  h1 ( and.intro hna (and.right h_CCa_x) )
+                )
+          )
+          (fun ha : a x,
+            have hb : b x := h_sab ha,
+            have hnna : ¬ (¬ a x) := dne.mpr ha,
+            and.intro (dne_intro (b x) hnna) hb  
+          )
+      )
+  )
+  
