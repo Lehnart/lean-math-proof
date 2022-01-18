@@ -454,6 +454,33 @@ theorem dne_intro {p : Prop} (q : Prop) : ¬ p -> ¬ (p ∧ q):=
       )
   )
 
+theorem dist_neg_over_or {p q :Prop} : ¬(p ∨ q) <-> ( ¬p /\ ¬q ) :=
+  iff.intro 
+    ( fun h : ¬(p ∨ q) , 
+      have hnp : ¬p := 
+        or.elim 
+          (classical.em p)
+          (fun hp : p , absurd (or.intro_left q hp) h) 
+          (fun hnp :¬p , hnp ),
+      have hnq : ¬q := 
+        or.elim 
+          (classical.em q)
+          (fun hq : q , absurd (or.intro_right p hq) h) 
+          (fun hnq :¬q , hnq ),
+      and.intro hnp hnq
+    )
+    ( fun h : ( ¬p /\ ¬q ) , 
+        or.elim 
+          (classical.em (p ∨ q))
+          (fun h_p_or_q : p ∨ q , 
+            or.elim
+              h_p_or_q
+              (fun hp : p , absurd hp (and.left h))
+              (fun hq : q , absurd hq (and.right h))
+          ) 
+          (fun hnp :¬(p ∨ q) , hnp )
+    )
+
 example (a b : set α) : subset a b -> C (C a b) b = a :=
   (fun h_sab : subset a b,
     set_ext
@@ -477,4 +504,34 @@ example (a b : set α) : subset a b -> C (C a b) b = a :=
           )
       )
   )
+
+example (e a b : set α) : subset a e -> subset b e -> C (U a b) e = I (C a e)(C b e) :=
+  (fun hae : subset a e,
+    (fun hbe : subset b e,
+      set_ext 
+        (C (U a b) e)
+        (I (C a e)(C b e))
+        (fun x : α, 
+          iff.intro
+            (fun h_CUabe : C (U a b) e x,
+              have hex : e x := and.right h_CUabe,
+              have hnbx : ¬ b x := and.right (dist_neg_over_or.mp (and.left h_CUabe)),
+              have hnax : ¬ a x  := and.left (dist_neg_over_or.mp (and.left h_CUabe)),
+              and.intro (and.intro hnax hex) (and.intro hnbx hex)
+            )
+            (fun hI_Cae_Cbe : I (C a e)(C b e) x,
+              have hex : e x := and.right (and.right hI_Cae_Cbe),
+              have hnax : ¬ (a x)  := and.left(and.left hI_Cae_Cbe),
+              have hnbx : ¬ (b x)  := and.left (and.right hI_Cae_Cbe),
+              have hnabx : ¬ (a x ∨ b x) := dist_neg_over_or.mpr (and.intro hnax hnbx),
+              and.intro hnabx hex
+            )
+        )
+    )
+  ) 
   
+
+variable x : α 
+variables e a b : set α
+#reduce C (U a b) e x
+#reduce I (C a e)(C b e) x
