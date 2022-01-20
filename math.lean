@@ -454,6 +454,15 @@ theorem dne_intro {p : Prop} (q : Prop) : ¬ p -> ¬ (p ∧ q):=
       )
   )
 
+theorem dne_lintro {p : Prop} (q : Prop) : ¬ p -> ¬ ( q ∧ p ):=
+  (fun hnp : ¬ p ,
+    classical.by_contradiction
+      (fun h_nn_q_and_p : ¬¬ (q ∧ p),
+      have hp_and_q : q ∧ p := dne.mp h_nn_q_and_p,
+        (hnp (and.right hp_and_q))
+      )
+  )
+
 theorem dist_neg_over_or {p q :Prop} : ¬(p ∨ q) <-> ( ¬p /\ ¬q ) :=
   iff.intro 
     ( fun h : ¬(p ∨ q) , 
@@ -481,6 +490,20 @@ theorem dist_neg_over_or {p q :Prop} : ¬(p ∨ q) <-> ( ¬p /\ ¬q ) :=
           (fun hnp :¬(p ∨ q) , hnp )
     )
 
+theorem dist_neg_over_and {p q :Prop} : ¬(p /\ q) -> ( ¬p ∨ ¬q ) := 
+  ( fun h : ¬(p /\ q) , 
+    or.elim 
+    (classical.em ( ¬p ∨ ¬q ))
+    (fun h1 : ( ¬p ∨ ¬q ) , h1)
+    (fun h2 : ¬( ¬p ∨ ¬q ) , 
+      have h3 : ¬¬p /\ ¬¬q := dist_neg_over_or.mp h2,
+      have hp : p := dne.mp h3.left,
+      have hq : q := dne.mp h3.right, 
+      absurd (and.intro hp hq) h
+    )
+  )
+
+/- Le complémentaire du complémentaire d'un ensemble est lui même -/
 example (a b : set α) : subset a b -> C (C a b) b = a :=
   (fun h_sab : subset a b,
     set_ext
@@ -505,6 +528,7 @@ example (a b : set α) : subset a b -> C (C a b) b = a :=
       )
   )
 
+/- 1ere loi de morgan -/
 example (e a b : set α) : subset a e -> subset b e -> C (U a b) e = I (C a e)(C b e) :=
   (fun hae : subset a e,
     (fun hbe : subset b e,
@@ -529,9 +553,43 @@ example (e a b : set α) : subset a e -> subset b e -> C (U a b) e = I (C a e)(C
         )
     )
   ) 
-  
 
-variable x : α 
-variables e a b : set α
-#reduce C (U a b) e x
-#reduce I (C a e)(C b e) x
+/- 2eme loi de morgan -/
+example (e a b : set α) : subset a e -> subset b e -> C (I a b) e = U (C a e)(C b e) :=
+  (fun hae : subset a e,
+    (fun hbe : subset b e,
+      set_ext 
+        (C (I a b) e)
+        (U (C a e)(C b e))
+        (fun x : α, 
+          iff.intro
+            (fun h_CIabe : C (I a b) e x,
+              have hex : e x := and.right h_CIabe,
+              have hna_or_nbx : ¬ a x ∨ ¬ b x := (dist_neg_over_and (and.left h_CIabe)),
+              or.elim 
+                hna_or_nbx
+                (fun hnax : ¬ a x ,
+                  or.intro_left  ((b x → false) ∧ e x) (and.intro hnax hex) 
+                )
+                (fun hnbx : ¬ b x ,
+                  or.intro_right  ((a x → false) ∧ e x) (and.intro hnbx hex) 
+                )
+            )
+            (fun hU_Cae_Cbe : U (C a e)(C b e) x,
+              or.elim 
+                hU_Cae_Cbe
+                (fun h_Cae : (a x → false) ∧ e x,
+                  and.intro 
+                    (dne_intro (b x) (and.left h_Cae)) 
+                    (and.right h_Cae) 
+                )
+                (fun h_Cbe : (b x → false) ∧ e x,
+                  and.intro 
+                    (dne_lintro (a x) (and.left h_Cbe)) 
+                    (and.right h_Cbe) 
+                )
+            )
+        )
+    )
+  ) 
+  
