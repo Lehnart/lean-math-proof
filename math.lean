@@ -592,4 +592,20 @@ example (e a b : set α) : subset a e -> subset b e -> C (I a b) e = U (C a e)(C
         )
     )
   ) 
-  
+
+/- une structure de paire qui va être la base des produits cartésiens-/
+structure pair (α : Type u) :=
+  intro :: (first : α) (second : α)
+
+def pair_eq {α} (a b : pair α) : Prop :=
+  (a.first = b.first) ∧ (a.second = b.second)
+
+example ( a b c d : α ) :  pair_eq (pair.intro a b) (pair.intro c d) ↔ (a=c) ∧ (b=d):=
+  iff.intro
+  (fun heq : pair_eq (pair.intro a b) (pair.intro c d),
+    heq
+  )
+  (fun ha_ac_and_bd : (a=c) ∧ (b=d),
+    ha_ac_and_bd
+  )
+
