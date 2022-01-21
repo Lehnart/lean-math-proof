@@ -609,3 +609,9 @@ example ( a b c d : α ) :  pair_eq (pair.intro a b) (pair.intro c d) ↔ (a=c) 
     ha_ac_and_bd
   )
 
+/- Un ensemble construit à partir de deux ensembles : le produit cartésien -/
+def pair_set (a b : set α) : set (pair α) :=
+  (fun hp : pair α,
+    (a hp.first) ∧ (b hp.second)
+  )
+
