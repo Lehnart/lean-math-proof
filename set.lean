@@ -8,7 +8,7 @@ variable β : Type u
 axiom set_ext {α} (E F : set α) : (∀x:α, ( E x ↔ F x )) → E = F
 
 /- La réciproque découle de la définition de l'égalité -/
-theorem set_ext_rec {α} (E F : set α) :  E = F → (∀x, ( E x ↔ F x )) :=
+theorem set_ext_rec {α} {E F : set α} :  E = F → (∀x, ( E x ↔ F x )) :=
   (fun eq_E_F : (E = F) ,
     (fun x: α,
       iff.intro
@@ -60,10 +60,35 @@ def list_set {α}: (list α -> set α)
 def subset {α} (s₁ s₂ : set α) :=
 ∀ ⦃a⦄, a ∈ s₁ → a ∈ s₂
 
-example (E F : set α) : subset E F <-> ∀ ⦃a⦄, a ∈ E → a ∈ F :=
+theorem subset_exp {α} {E F : set α} : subset E F <-> ∀ ⦃x:α⦄, x ∈ E → x ∈ F :=
   iff.intro
     (fun h : subset E F, h)
     (fun h : ∀ ⦃a⦄, a ∈ E → a ∈ F, h)
+
+theorem reciproc_subset_is_eq (a b : set α) : (subset a b) /\ (subset b a) <-> (a = b) :=
+  iff.intro
+    (fun h : (subset a b) /\ (subset b a), 
+      have h0 : ∀ x : α, a x <-> b x := 
+        (fun x : α,
+          have h1 : ∀ y:α, a y -> b y := subset_exp.mp h.left,
+          have h2 : ∀ y:α, b y -> a y := subset_exp.mpr h.right,
+          have h11 : a x -> b x := h1 x,
+          have h22 : b x -> a x := h2 x,
+          have h3 : a x <-> b x := iff.intro h11 h22,
+          h3
+        ),
+      set_ext a b h0
+    )
+    (fun h : a = b, 
+      have h0 : (∀x, ( a x ↔ b x )) := set_ext_rec h,
+      and.intro 
+        (fun x : α,
+          (h0 x).mp         
+        )
+        (fun x : α,
+          (h0 x).mpr 
+        )
+    )
 
 /- Une condition suffisante pour qu'un singleton soit un sous ensemble de E est que l'élément appartienne à E -/
 example (a : α) (E : set α) : E a -> (subset (singl a) E) :=
@@ -287,8 +312,6 @@ example (a b : set α) : (subset a b) ↔ (I a b) = a :=
         (fun ha : a x,
           have h_Iab_eq_a : (∀x, ( (I a b) x ↔ a x )) :=
             set_ext_rec
-              (I a b)
-              a 
               h
             ,
           have h_Iab_eq_a_x : (I a b) x ↔ a x := h_Iab_eq_a x,
@@ -323,8 +346,6 @@ example (a b : set α) : (subset a b) ↔ (U a b) = b :=
         (fun ha : a x,
           have h_Uab_eq_b : (∀x, ( (U a b) x ↔ b x )) :=
             set_ext_rec
-              (U a b)
-              b 
               h
             ,
           have h_Uab_eq_b_x : (U a b) x ↔ b x := h_Uab_eq_b x,
