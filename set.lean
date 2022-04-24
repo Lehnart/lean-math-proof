@@ -509,8 +509,18 @@ example ( a b c d : α ) :  pair_eq (pair.intro a b) (pair.intro c d) ↔ (a=c) 
   )
 
 /- Un ensemble construit à partir de deux ensembles : le produit cartésien -/
-def pair_set (a b : set α) : set (pair α) :=
+def pair_set {α} (a b : set α) : set (pair α) :=
   (fun hp : pair α,
     (a hp.first) ∧ (b hp.second)
   )
 
+example (a a1 b b1 : set α) : subset a1 a /\ subset b1 b -> subset (pair_set a1 b1) (pair_set a b):=
+  (fun h : subset a1 a /\ subset b1 b,
+    (fun hp : pair α,
+      (fun hpab : (pair_set a1 b1) hp ,
+        have ha1 : a hp.first := h.left hpab.left,
+        have hb1 : b hp.second := h.right hpab.right,
+        and.intro ha1 hb1
+      )
+    )
+  )
