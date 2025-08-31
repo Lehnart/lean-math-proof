@@ -112,3 +112,7 @@ def four : Even := Even.succ two
 #eval two + four
 #eval two * two
 #eval two * four * four
+
+-- when type are not inferable, we can use @ so lean show the signature of the function and don t try to infer them
+#check @IO.println
+-- [ToString α] means that α must have an instance of ToString
