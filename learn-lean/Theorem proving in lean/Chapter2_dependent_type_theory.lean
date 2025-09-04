@@ -1,4 +1,4 @@
 #check Prop
 #check List
 
-def bar := (fun a => fun x : a => x + 2) Nat
+-- def bar := (fun a => fun x : a => x + 2) Nat

@@ -1,5 +1,3 @@
-variable (p q : Prop)
-
 example (h : p ∧ q) : q ∧ p := ⟨ h.right, h.left ⟩
 
 example (hp : p) : p ∨ q := Or.intro_left q hp
@@ -15,9 +13,6 @@ theorem and_swap : p ∧ q ↔ q ∧ p :=
   Iff.intro
     (fun hpq : p ∧ q => ⟨ hpq.right, hpq.left ⟩)
     (fun hqp : q ∧ p => ⟨ hqp.right, hqp.left ⟩)
-
-variable (h : p ∧ q)
-example : q ∧ p := (and_swap p q).mp h
 
 example (h : p ∧ q) : q ∧ p :=
   have hp : p := h.left
@@ -87,18 +82,136 @@ theorem dist_or : p ∨ (q ∧ r) ↔ (p ∨ q) ∧ (p ∨ r) :=
           (fun hqr : q ∧ r => Or.intro_right p hqr.right)
       And.intro hpq hpr
     )
-    (fun hpqpr : (p ∨ q) ∧ (p ∨ r) =>
-      And.elim
-        (fun hpq : p ∨ q => fun hpr : p ∨ r =>
-          Or.elim
-            hpq
-            (fun hp : p => Or.intro_left (q ∧ r) hp)
-            (fun hq : q =>
-              Or.elim
-                hpr
-                (fun hp : p => Or.intro_left (q ∧ r) hp)
-                (fun hr : r => Or.intro_right p (And.intro hq hr))
-            )
-        )
-        hpqpr
+    (fun ⟨hpq, hpr⟩ =>
+        Or.elim
+          hpq
+          (Or.intro_left (q ∧ r) .)
+          (fun hq : q =>
+            Or.elim
+              hpr
+              (fun hp : p => Or.intro_left (q ∧ r) hp)
+              (fun hr : r => Or.intro_right p (And.intro hq hr))
+          )
     )
+
+example : (p → (q → r)) ↔ (p ∧ q → r) :=
+  Iff.intro
+    (fun hpqr : p → (q → r) =>
+      (fun hpq : p ∧ q =>
+        have hp : p := hpq.left
+        have hq : q := hpq.right
+        hpqr hp hq
+      )
+    )
+    (fun hprq : (p ∧ q → r) =>
+      (fun hp : p =>
+        (fun hq : q =>
+          hprq (And.intro hp hq)
+        )
+      )
+    )
+
+theorem t1 : (p ∨ q → r) ↔ (p → r) ∧ (q → r) :=
+  Iff.intro
+    (fun hpq : (p ∨ q) → r =>
+      And.intro
+        (fun hp : p => hpq (Or.intro_left q hp))
+        (fun hq : q => hpq (Or.intro_right p hq))
+    )
+    (fun hprqr : (p → r) ∧ (q → r) =>
+      (fun hpq : p ∨ q =>
+        Or.elim
+          hpq
+          (fun hp :p => hprqr.left hp)
+          (fun hq :q => hprqr.right hq)
+      )
+    )
+
+theorem not_over_or {p q : Prop}: ¬(p ∨ q) ↔ ¬p ∧ ¬q := t1
+
+example : ¬p ∨ ¬q → ¬(p ∧ q) := (fun hnpnq => (fun ⟨hp, hq⟩ => Or.elim hnpnq (. hp) (. hq)))
+
+example : ¬(p ∧ ¬p) := (fun ⟨hp, hnp⟩ => hnp hp)
+
+example : p ∧ ¬q → ¬(p → q) := (fun ⟨hp, hnq⟩ => (fun hpq => (hnq ∘ hpq) hp) )
+
+theorem not_p {q: Prop} : ¬p → (p → q) := (fun hnp => (fun hp => absurd hp hnp))
+
+example : (¬p ∨ q) → (p → q) := ( fun hnpq => (fun hp => Or.elim hnpq (absurd hp .) (.) ))
+
+example : p ∨ False ↔ p := Iff.intro (Or.elim . (.) False.elim) (Or.intro_left False .)
+
+example : p ∧ False ↔ False := Iff.intro ( (And.right .) ) False.elim
+
+example : ¬(p ↔ ¬p) := (fun h => let not_p (hp : p) := (h.mp hp) hp; not_p (h.mpr not_p))
+
+theorem revert_imp : (p → q) → (¬q → ¬p) := (fun hpq => ( ((. ∘ hpq) .)) )
+
+open Classical
+
+theorem my_not_imp : ¬(a → b) →  a ∧ ¬b :=
+  (fun hn_a_b =>
+    let ha : a :=
+      byContradiction
+        (fun hn_a : ¬a =>
+          let ha_b := not_p hn_a
+          hn_a_b ha_b
+        )
+    let hnb : ¬b :=
+      byContradiction
+        (fun hnnb : ¬¬b =>
+          let hb : b := dne hnnb
+          let ha_b (_ : a) := hb
+          hn_a_b ha_b
+        )
+    And.intro ha hnb
+  )
+
+example (p : Prop) : (p → r ∨ s) → ((p → r) ∨ (p → s)) :=
+  (fun hprs : p → r ∨ s =>
+    byContradiction
+      (fun hn_pr_or_ps : ¬((p → r) ∨ (p → s)) =>
+        let hnpr_and_nps := not_over_or.mp hn_pr_or_ps
+        And.elim
+          (fun hnp : ¬(p → r) => fun hns : ¬(p → s) =>
+            let hp_and_nr := my_not_imp hnp
+            let hp_and_ns := my_not_imp hns
+            let hp := hp_and_nr.left
+            let hnr_and_ns := And.intro hp_and_nr.right hp_and_ns.right
+            let hn_r_or_s := not_over_or.mpr hnr_and_ns
+            let hr_or_s := hprs hp
+            hn_r_or_s hr_or_s
+          )
+          hnpr_and_nps
+      )
+  )
+
+theorem not_over_and : ¬(p ∧ q) → ¬p ∨ ¬q :=
+  (fun hn_p_and_q =>
+    byContradiction
+      (fun h : ¬(¬p ∨ ¬q) =>
+        have ⟨ hnnp, hnnq ⟩ := not_or.mp h
+        hn_p_and_q ⟨ (dne hnnp), (dne hnnq) ⟩
+      )
+  )
+
+example : (p → q) → (¬p ∨ q) :=
+  (fun hpq =>
+    byCases
+      ((.inr ∘ hpq) .)
+      (.inl)
+  )
+
+example : (¬q → ¬p) → (p → q) :=
+  (fun hnq_np =>
+    byCases
+      (fun hq : q => (fun _:p => hq))
+      (fun hnq : ¬q => not_p (hnq_np hnq))
+  )
+
+example : (((p → q) → p) → p) :=
+  (fun hpqp : (p → q) → p =>
+    byCases
+      (fun hpq => hpqp hpq)
+      (fun hnpq => (And.left ∘ not_imp.mp) hnpq)
+  )
