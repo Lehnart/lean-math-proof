@@ -1,0 +1,9 @@
+name = "lean-math-proof"
+version = "0.1.0"
+
+[[lean_lib]]
+name = "MathematicsInLean"
+
+[[require]]
+name = "mathlib"
+scope = "leanprover-community"
